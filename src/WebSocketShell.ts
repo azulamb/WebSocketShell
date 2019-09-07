@@ -101,26 +101,26 @@ export class WebSocketShell
 		this.server = config.server || DefaultServer( this.auth, this.logger );
 	}
 
-	public start( port?: number )
+	public start( port?: number, hostname?: string, backlog?: number )
 	{
-		this.server.listen( port, () =>
+		return new Promise<void>( ( resolve ) =>
 		{
-			this.logger.log( ' Server is listening on port '+ port );
-		} );
-
-		const wsServer = new WebSocket.server(
-		{
-			httpServer: this.server,
-			autoAcceptConnections: false,
-		} );
-
-		wsServer.on( 'request', ( request ) =>
-		{
-			this.auth.authenticate( request.httpRequest ).catch( () =>
+			this.server.listen( port, hostname, backlog, resolve );
+	
+			const wsServer = new WebSocket.server(
 			{
-				request.reject();
-				this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
-			} ).then( () => { this.onConnect( request ); } );
+				httpServer: this.server,
+				autoAcceptConnections: false,
+			} );
+	
+			wsServer.on( 'request', ( request ) =>
+			{
+				this.auth.authenticate( request.httpRequest ).catch( () =>
+				{
+					request.reject();
+					this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
+				} ).then( () => { this.onConnect( request ); } );
+			} );
 		} );
 	}
 

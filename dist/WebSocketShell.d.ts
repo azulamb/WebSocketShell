@@ -19,6 +19,6 @@ export declare class WebSocketShell {
     private server;
     private logger;
     constructor(config: WebSocketShellConfig);
-    start(port?: number): void;
+    start(port?: number, hostname?: string, backlog?: number): Promise<void>;
     private onConnect;
 }

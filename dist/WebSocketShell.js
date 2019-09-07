@@ -52,19 +52,19 @@ class WebSocketShell {
         this.auth = config.auth || new DefaultAuthorization();
         this.server = config.server || DefaultServer(this.auth, this.logger);
     }
-    start(port) {
-        this.server.listen(port, () => {
-            this.logger.log(' Server is listening on port ' + port);
-        });
-        const wsServer = new WebSocket.server({
-            httpServer: this.server,
-            autoAcceptConnections: false,
-        });
-        wsServer.on('request', (request) => {
-            this.auth.authenticate(request.httpRequest).catch(() => {
-                request.reject();
-                this.logger.log(' Connection from origin ' + request.origin + ' rejected.');
-            }).then(() => { this.onConnect(request); });
+    start(port, hostname, backlog) {
+        return new Promise((resolve) => {
+            this.server.listen(port, hostname, backlog, resolve);
+            const wsServer = new WebSocket.server({
+                httpServer: this.server,
+                autoAcceptConnections: false,
+            });
+            wsServer.on('request', (request) => {
+                this.auth.authenticate(request.httpRequest).catch(() => {
+                    request.reject();
+                    this.logger.log(' Connection from origin ' + request.origin + ' rejected.');
+                }).then(() => { this.onConnect(request); });
+            });
         });
     }
     onConnect(request) {
