@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja" style="font-size:20px;">
+<head>
+	<meta charset="utf-8">
+	<title>Push</title>
+	<link rel="manifest" href="./manifest.json">
+	<style>button::after{display:inline;}button[disable]::after{content:'No publey' !important;}#get::after{content:'Get token';}#delete::after{content:'Delete token';}input{display:block;width:100%;}</style>
+	<script src="https://www.gstatic.com/firebasejs/6.5.0/firebase-app.js"></script>
+	<script src="./qr-code.js" defer></script>
+	<script>
+document.addEventListener( 'DOMContentLoaded', () =>
+{
+	const Print = ( ( textarea ) =>
+	{
+		return ( text ) => { textarea.value = text || ''; };
+	} )( document.getElementById( 'token' ) );
+
+	const PARAMS = new URLSearchParams( location.search );
+
+	( () =>
+	{
+		const params = new URLSearchParams();
+
+		const update = ( ( link, id ) =>
+		{
+			let qr;
+			customElements.whenDefined( 'qr-code' ).then( () => { qr = document.getElementById( id ); } );
+			return () =>
+			{
+				link.textContent = '?' + params.toString();
+				link.href = './push.html' + link.textContent;
+				if ( qr ) { qr.value = link.href; }
+			};
+		} )( document.getElementById( 'link' ), 'qr' );
+
+		[ 'apiKey', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'pubKey' ].forEach( ( key ) =>
+		{
+			const input = document.getElementById( key );
+			input.value = PARAMS.get( key );
+			params.set( key, input.value );
+
+			function change()
+			{
+				params.set( key, input.value || '' );
+				update();
+			}
+			input.addEventListener( 'change', change );
+			input.addEventListener( 'blur', change );
+		} );
+
+		update();
+	} )();
+
+	document.getElementById( 'remove' ).addEventListener( 'click', () =>
+	{
+		Promise.all(
+		[
+			navigator.serviceWorker.getRegistrations(),
+			caches.keys(),
+		] ).then( ( result ) =>
+		{
+			console.log( result );
+			const promises = [];
+			for ( let registration of result[ 0 ] ) { promises.push( registration.unregister() ); }
+			for ( let cacheName of result[ 1 ] ) { promises.push( caches.delete( cacheName ) ); }
+			return Promise.all( promises );
+		} ).then( () => { console.log( 'Complete: Remove SW.' ); } ).catch( ( error ) => { console.log( error ); } );
+	} );
+
+	if ( !PARAMS.get( 'pubKey' ) ) { return Print( 'No pubKey' ); }
+
+	firebase.initializeApp(
+	{
+		apiKey: PARAMS.get( 'apiKey' ),
+		authDomain: PARAMS.get( 'projectId' ) + '.firebaseapp.com',
+		databaseURL: 'https://' + PARAMS.get( 'projectId' ) + '.firebaseio.com',
+		projectId: PARAMS.get( 'projectId' ),
+		storageBucket: PARAMS.get( 'storageBucket' ),
+		messagingSenderId: PARAMS.get( 'messagingSenderId' ),
+		appId: PARAMS.get( 'appId' ),
+	} );
+
+	const messaging = firebase.messaging();
+	messaging.usePublicVapidKey( PARAMS.get( 'pubKey' ) );
+
+	( ( button ) =>
+	{
+		button.disable = false;
+
+		button.addEventListener( () =>
+		{
+			messaging.requestPermission().then( () =>
+			{
+				return messaging.getToken();
+			} ).then( ( token ) =>
+			{
+				Print( token );
+			} ).catch( ( error ) =>
+			{
+				Print( 'Error: failure get token.' );
+				console.log( error );
+			} );
+		} );
+	} )( document.getElementById( 'get' ) );
+
+	( ( button ) =>
+	{
+		button.disable = false;
+
+		button.addEventListener( 'click', () =>
+		{
+			messaging.getToken().then( ( token ) =>
+			{
+				Print();
+				return messaging.deleteToken( token );
+			} ).catch( ( error ) =>
+			{
+				Print( 'Error: failure delete token.' );
+				console.log( error );
+			} );
+		} );
+	} )( document.getElementById( 'delete' ) );
+
+	messaging.getToken().then( ( token ) =>
+	{
+		if ( token ) { Print( token ); }
+	} ).catch( ( error ) => { console.log( error ); } );
+
+	navigator.serviceWorker.register( './firebase-messaging-sw.js?messagingSenderId' + PARAMS.get( 'messagingSenderId' ) ).then( ( registration ) =>
+	{
+		messaging.useServiceWorker( registration );
+		return messaging.requestPermission().then( () =>
+		{
+			console.log( 'ServiceWorker registration: OK' );
+		} );
+	} ).catch().catch( ( error ) => { console.error( error ); } );
+} );
+	</script>
+</head>
+<body>
+	<div>
+		<input id="apiKey" type="text" placeholder="YOUR_API_KEY">
+		<input id="projectId" type="text" placeholder="YOUR_PRODUCT_ID">
+		<input id="storageBucket" type="text" placeholder="YOUR_STORAGE_BUCKET">
+		<input id="messagingSenderId" type="text" placeholder="YOUR_MESSAGING_SENDER_ID">
+		<input id="appId" type="text" placeholder="YOUR_APP_ID">
+		<input id="pubKey" type="text" placeholder="YOUR_WEB_PUSH_KEY">
+		<a id="link" style="word-break:break-all;font-family:monospace;text-decoration:none;display:block;"></a>
+		<qr-code id="qr" scale="2"></qr-code>
+	</div>
+	<div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr">
+		<button id="get" disable></button>
+		<button id="delete" disable></button>
+		<button id="remove">Remove SW</button>
+	</div>
+	<textarea id="token" style="width:100%;box-sizing:border-box;" readonly></textarea>
+</body>
+</html>
