@@ -105,14 +105,12 @@ export class WebSocketShell
 	{
 		return new Promise<void>( ( resolve ) =>
 		{
-			this.server.listen( port, hostname, backlog, resolve );
-	
 			const wsServer = new WebSocket.server(
 			{
 				httpServer: this.server,
 				autoAcceptConnections: false,
 			} );
-	
+
 			wsServer.on( 'request', ( request ) =>
 			{
 				this.auth.authenticate( request.httpRequest ).catch( () =>
@@ -121,6 +119,8 @@ export class WebSocketShell
 					this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
 				} ).then( () => { this.onConnect( request ); } );
 			} );
+
+			this.server.listen( port, hostname, backlog, resolve );
 		} );
 	}
 

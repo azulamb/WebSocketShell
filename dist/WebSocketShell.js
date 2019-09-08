@@ -54,7 +54,6 @@ class WebSocketShell {
     }
     start(port, hostname, backlog) {
         return new Promise((resolve) => {
-            this.server.listen(port, hostname, backlog, resolve);
             const wsServer = new WebSocket.server({
                 httpServer: this.server,
                 autoAcceptConnections: false,
@@ -65,6 +64,7 @@ class WebSocketShell {
                     this.logger.log(' Connection from origin ' + request.origin + ' rejected.');
                 }).then(() => { this.onConnect(request); });
             });
+            this.server.listen(port, hostname, backlog, resolve);
         });
     }
     onConnect(request) {
