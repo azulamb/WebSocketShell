@@ -64,7 +64,7 @@ class WebConsole
 
 	connect( res )
 	{
-		return this.webSocket( 'ws://localhost:18080/shell?key=' + res.key, 'shell' ).then( ( ws ) =>
+		return this.webSocket( location.origin.replace( /^http/, 'ws' ) + '/shell?key=' + res.key, 'shell' ).then( ( ws ) =>
 		{
 			Log( 'Start' );
 			this.input.focus();
