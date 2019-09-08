@@ -1,14 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const wss = require("./WebSocketShell");
+const path = require("path");
 const url_1 = require("url");
 exports.WebSocketShell = wss.WebSocketShell;
 if (require.main === module) {
     ExecServer();
 }
 function ExecServer() {
+    function ToAbsolutePath(nowpath) {
+        return path.isAbsolute(nowpath) ? nowpath : path.join(process.cwd(), nowpath);
+    }
     const Config = (() => { try {
-        return require('./config.json');
+        return require(ToAbsolutePath(process.argv[2] || './config.json'));
     }
     catch (error) { } return {}; })();
     if (Config.debug === undefined) {

@@ -1,4 +1,5 @@
 import * as wss from './WebSocketShell'
+import * as path from 'path'
 import { URLSearchParams } from 'url'
 
 export const WebSocketShell = wss.WebSocketShell;
@@ -13,7 +14,12 @@ interface ServerConfig
 
 function ExecServer()
 {
-	const Config: ServerConfig = ( () => { try { return require( './config.json' ); } catch( error ) {} return {}; } )();
+	function ToAbsolutePath( nowpath: string )
+	{
+		return path.isAbsolute( nowpath ) ? nowpath : path.join( process.cwd(), nowpath );
+	}
+
+	const Config: ServerConfig = ( () => { try { return require( ToAbsolutePath( process.argv[ 2 ] || './config.json' ) ); } catch( error ) {} return {}; } )();
 	if ( Config.debug === undefined ) { Config.debug = process.env.NODE_ENV === 'debug'; }
 
 	function RandString( length = 8 )

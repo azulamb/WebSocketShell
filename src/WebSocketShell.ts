@@ -113,11 +113,15 @@ export class WebSocketShell
 
 			wsServer.on( 'request', ( request ) =>
 			{
-				this.auth.authenticate( request.httpRequest ).catch( () =>
+				this.auth.authenticate( request.httpRequest ).then( () =>
+				{
+					this.onConnect( request );
+				} ).catch( ( error ) =>
 				{
 					request.reject();
 					this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
-				} ).then( () => { this.onConnect( request ); } );
+					throw error;
+				} );
 			} );
 
 			this.server.listen( port, hostname, backlog, resolve );

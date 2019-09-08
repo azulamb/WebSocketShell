@@ -21,6 +21,7 @@ function DefaultRequest(request, logger) {
 }
 function DefaultServer(auth, logger) {
     const server = http.createServer((request, response) => {
+        console.log('crequest', request.url);
         auth.issueKey(request).catch(() => {
             return DefaultRequest(request, logger);
         }).then((result) => {
@@ -59,10 +60,14 @@ class WebSocketShell {
                 autoAcceptConnections: false,
             });
             wsServer.on('request', (request) => {
-                this.auth.authenticate(request.httpRequest).catch(() => {
+                console.log('wrequest', request.httpRequest.url);
+                this.auth.authenticate(request.httpRequest).then(() => {
+                    this.onConnect(request);
+                }).catch((error) => {
                     request.reject();
                     this.logger.log(' Connection from origin ' + request.origin + ' rejected.');
-                }).then(() => { this.onConnect(request); });
+                    throw error;
+                });
             });
             this.server.listen(port, hostname, backlog, resolve);
         });
