@@ -5,7 +5,7 @@
 	<title>WebShell</title>
 	<link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet">
 	<style>:root{--front:black;--back:white;--select:lightgray;}@media (prefers-color-scheme:dark){:root{--back:#323f5a;--front:#b2d6e4;--select:#172044;}}</style>
-	<style>html{height:100%;}body{height:100%;padding:0;margin:0;overflow:hidden;display:grid;grid-template-rows:1fr 1rem;grid-template-columns:1fr;background:var(--back);}textarea,input,button{display:block;width:100%;height:100%;box-sizing:border-box;background:transparent;border:none;outline:none;font-family:'Roboto Mono',monospace;color:var(--front);}div{position:relative;background:var(--select);}button{cursor:pointer;outline:none;background:var(--select);}#connect{position:absolute;top:0;left:0;width:100%;height:100%;}input::placeholder{text-align:center;}body > div > div{display:grid;grid-template-rows:1fr;grid-template-columns:1fr 1rem;}</style>
+	<style>html{height:100%;}body{height:100%;padding:0;margin:0;overflow:hidden;display:grid;grid-template-rows:1fr 1rem;grid-template-columns:1fr;background:var(--back);}textarea,input,button{display:block;width:100%;height:100%;box-sizing:border-box;background:transparent;border:none;outline:none;font-family:'Roboto Mono',monospace;color:var(--front);}div{position:relative;background:var(--select);}button{cursor:pointer;outline:none;background:var(--select);}#connect{position:absolute;top:0;left:0;width:100%;height:100%;}#connect::after{content:'Connect';display:inline}#connect[disable]::after{content:'Connection...';}input::placeholder{text-align:center;}body > div > div{display:grid;grid-template-rows:1fr;grid-template-columns:1fr 1rem;}</style>
 	<script>
 const PARAMS = ( () =>
 {
@@ -128,11 +128,17 @@ document.addEventListener( 'DOMContentLoaded', () =>
 	document.getElementById( 'clear' ).addEventListener( 'click', () => { console.clear(); } );
 	button.addEventListener( 'click', () =>
 	{
-		button.parentElement.removeChild( button );
+		if ( button.disable ) { return; }
+		button.disable = true;
 		fetch( '/shell' ).then( ( res ) => { return res.json(); } ).then( ( res ) =>
 		{
+			button.parentElement.removeChild( button );
 			return console.connect( res );
-		} ).catch( ( error ) => { Err( error ); } );
+		} ).catch( ( error ) =>
+		{
+			button.disable = false;
+			Err( error );
+		} );
 	} );
 } );
 	</script>
@@ -144,7 +150,7 @@ document.addEventListener( 'DOMContentLoaded', () =>
 			<input id="input" type="text">
 			<button id="clear" title="clear">🗑</button>
 		</div>
-		<button id="connect">Connect</button>
+		<button id="connect"></button>
 	</div>
 </body>
 </html>
