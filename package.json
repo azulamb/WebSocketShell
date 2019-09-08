@@ -24,9 +24,9 @@
   },
   "homepage": "https://github.com/HirokiMiyaoka/WebSocketShell#readme",
   "devDependencies": {
-    "websocket": "^1.0.29"
+    "@types/websocket": "0.0.40"
   },
   "dependencies": {
-    "@types/websocket": "0.0.40"
+    "websocket": "^1.0.29"
   }
 }
