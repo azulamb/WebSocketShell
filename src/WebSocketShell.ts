@@ -99,31 +99,32 @@ export class WebSocketShell
 		this.logger = config.logger || { log: () => {}, error: () => {} };
 		this.auth = config.auth || new DefaultAuthorization();
 		this.server = config.server || DefaultServer( this.auth, this.logger );
+
+		
+		const wsServer = new WebSocket.server(
+		{
+			httpServer: this.server,
+			autoAcceptConnections: false,
+		} );
+	
+		wsServer.on( 'request', ( request ) =>
+		{
+			this.auth.authenticate( request.httpRequest ).then( () =>
+			{
+				this.onConnect( request );
+			} ).catch( ( error ) =>
+			{
+				request.reject();
+				this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
+				throw error;
+			} );
+		} );
 	}
 
 	public start( port?: number, hostname?: string, backlog?: number )
 	{
 		return new Promise<void>( ( resolve ) =>
 		{
-			const wsServer = new WebSocket.server(
-			{
-				httpServer: this.server,
-				autoAcceptConnections: false,
-			} );
-
-			wsServer.on( 'request', ( request ) =>
-			{
-				this.auth.authenticate( request.httpRequest ).then( () =>
-				{
-					this.onConnect( request );
-				} ).catch( ( error ) =>
-				{
-					request.reject();
-					this.logger.log( ' Connection from origin ' + request.origin + ' rejected.' );
-					throw error;
-				} );
-			} );
-
 			this.server.listen( port, hostname, backlog, resolve );
 		} );
 	}
